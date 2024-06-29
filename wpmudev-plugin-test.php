@@ -101,7 +101,31 @@ class WPMUDEV_PluginTest {
 		);
 
 		WPMUDEV\PluginTest\Loader::instance();
+		
+		// Schedule daily task on plugin activation.
+        register_activation_hook(WPMUDEV_PLUGINTEST_PLUGIN_FILE, array($this, 'wpmudev_schedule_daily_task'));
+
+        // Remove scheduled task on plugin deactivation.
+        register_deactivation_hook(WPMUDEV_PLUGINTEST_PLUGIN_FILE, array($this, 'wpmudev_remove_scheduled_task'));
 	}
+
+	/**
+     * Schedule daily task.
+     */
+    public function wpmudev_schedule_daily_task()
+    {
+		if (!wp_next_scheduled('wpmudev_daily_task')) {
+			wp_schedule_event(time(), 'daily', 'wpmudev_daily_task');
+		}
+    }
+
+	/**
+     * Remove scheduled task.
+     */
+    public function wpmudev_remove_scheduled_task()
+    {
+        wp_clear_scheduled_hook('wpmudev_daily_task');
+    }
 }
 
 // Init the plugin and load the plugin instance for the first time.
@@ -111,3 +135,26 @@ add_action(
 		WPMUDEV_PluginTest::get_instance()->load();
 	}
 );
+
+// Hook the function to run daily.
+add_action('wpmudev_daily_task', 'wpmudev_daily_task');
+
+function wpmudev_daily_task()
+{
+    $args = array(
+        'post_type'      => array('post', 'page'),
+        'post_status'    => 'publish',
+        'posts_per_page' => -1,
+    );
+
+    $query = new WP_Query($args);
+
+    while ($query->have_posts()) {
+        $query->the_post();
+        update_post_meta(get_the_ID(), 'wpmudev_test_last_scan', current_time('mysql'));
+    }
+
+    wp_reset_postdata();
+}
+
+

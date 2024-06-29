@@ -102,21 +102,7 @@ class Auth extends Base {
 		$this->creds['client_secret'] = get_option('wpmudev_google_auth_client_secret');
 
 
-		// echo "<pre>";
-		// var_dump($this->set_up());
-		// echo "</pre>";
-		// wp_die();
-
-		// if ( $this->set_up() ) {
-        //     return 'Google authentication set up successfully.';
-		// 	wp_die();
-        // } else {
-        //     return 'Failed to set up Google authentication.';
-        // }
-
-
-
-		// use trait function here
+		// use trait function here.
 		$this->init();
 
 	}
@@ -182,6 +168,7 @@ class Auth extends Base {
 			: array(
 				'react',
 				'wp-element',
+				'wp-components',
 				'wp-i18n',
 				'wp-is-shallow-equal',
 				'wp-polyfill',

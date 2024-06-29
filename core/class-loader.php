@@ -93,6 +93,7 @@ final class Loader extends Base {
 	 */
 	private function init() {
 		App\Admin_Pages\Auth::instance()->init();
+		App\Admin_Pages\Posts_Maintenance::instance();
 		Endpoints\V1\Auth::instance();
 		Shortcode\WPMUDEV_Shortcode_Test::instance()->register();
 	}

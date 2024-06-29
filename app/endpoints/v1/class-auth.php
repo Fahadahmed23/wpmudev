@@ -21,6 +21,7 @@ use WP_REST_Server;
 use WP_REST_Request;
 use WP_REST_Response;
 
+
 class Auth extends Endpoint {
 	/**
 	 * API endpoint for the current endpoint.
@@ -39,6 +40,8 @@ class Auth extends Endpoint {
 	 * @var string $confirm_endpoint
 	*/
 	protected $confirm_endpoint = 'auth/confirm';
+
+
 	
 
 	/**
@@ -92,6 +95,49 @@ class Auth extends Endpoint {
 				),
 			)
 		);
+
+		// Route to posts scan
+		register_rest_route(
+			$this->get_namespace(),
+			'posts/scan',
+			array(
+				array(
+					'methods' => 'POST',
+					'callback' => array( $this, 'scan_posts' ),
+					'permission_callback' => function() {
+						return current_user_can( 'manage_options' );
+					},
+				),
+			)
+		);	
+	}
+
+	/**
+     * Scan all public posts and pages and update the wpmudev_test_last_scan post_meta with the current timestamp.
+     *
+     * @param WP_REST_Request $request The request object.
+     *
+     * @return WP_REST_Response
+     * @since 1.0.0
+     */
+	public function scan_posts( WP_REST_Request $request ) {
+		
+		$args = array(
+            'post_type' => array('post', 'page'),
+            'post_status' => 'publish',
+            'posts_per_page' => -1,
+        );
+
+        $query = new \WP_Query($args);
+
+        while ($query->have_posts()) {
+            $query->the_post();
+            update_post_meta(get_the_ID(), 'wpmudev_test_last_scan', current_time('mysql'));
+        }
+
+        wp_reset_postdata();
+		
+        return new WP_REST_Response(array('message' => 'Posts scanned successfully'), 200);
 	}
 
 	/**
@@ -133,14 +179,6 @@ class Auth extends Endpoint {
         }
     }
 
-	// wpmudev_handle_google_oauth_response
-	// # 3. Google oAuth Return URL Setup
-	// To implement Google’s oAuth, establish a return URL endpoint at `/wp-json/wpmudev/v1/auth/confirm`, providing functionality to:
-
-	// 1. Retrieve user email.
-	// 2. If the email exists and the user is not logged in, log in the user.
-	// 3. If the email doesn’t exist, create a new user with a generated password, and log them in. Redirect to the admin or home page accordingly.
-	// 4. Create a shortcode to display a personalized message if the user is logged in or a link for Google oAuth login if not.
 	public function wpmudev_handle_google_oauth_response(WP_REST_Request $request) {
 		// Get the authorization code from the request
 		$code = $request->get_param('code');
